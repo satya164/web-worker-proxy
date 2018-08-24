@@ -1,6 +1,6 @@
 {
   "name": "web-worker-proxy",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A better way of working with web workers",
   "keywords": [
     "web worker",
