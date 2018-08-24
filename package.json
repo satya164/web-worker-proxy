@@ -1,0 +1,39 @@
+{
+  "name": "web-worker-proxy",
+  "version": "0.1.0",
+  "description": "A better way of working with web workers",
+  "keywords": [
+    "web worker",
+    "proxy"
+  ],
+  "main": "lib/index.js",
+  "files": [
+    "lib/"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint .",
+    "flow": "flow",
+    "build": "babel src --out-dir lib --ignore '**/__tests__/**' --source-maps && flow-copy-source -i '**/__tests__/**' src lib",
+    "prebuild": "del lib/",
+    "prepare": "yarn build",
+    "example": "parcel example/index.html",
+    "precommit": "yarn lint && yarn flow"
+  },
+  "dependencies": {
+    "shortid": "^2.2.13"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-flow": "^6.23.0",
+    "del-cli": "^1.1.0",
+    "eslint": "^4.19.1",
+    "eslint-config-satya164": "^1.0.2",
+    "flow-bin": "^0.79.1",
+    "flow-copy-source": "^2.0.0",
+    "husky": "^0.14.3",
+    "parcel": "^1.9.7",
+    "prettier": "^1.13.5"
+  }
+}
