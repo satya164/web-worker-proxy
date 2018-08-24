@@ -1,7 +1,5 @@
 /* @flow */
 
-import { generate } from 'shortid';
-
 type Worker = {
   +addEventListener: (name: 'message', cb: (e: any) => mixed) => mixed,
   +removeEventListener: (name: 'message', cb: (e: any) => mixed) => mixed,
@@ -14,6 +12,13 @@ const ACTION_CALL = '__$$__SUPER_WORKER__ACTION_CALL';
 
 const RESULT_SUCCESS = '__$$__SUPER_WORKER__RESULT_SUCCESS';
 const RESULT_ERROR = '__$$__SUPER_WORKER__RESULT_ERROR';
+
+const uid = () =>
+  Array.from({ length: 128 / 16 }, () =>
+    Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1)
+  ).join('');
 
 const proxies = new WeakMap();
 
@@ -30,7 +35,7 @@ export function create(worker: Worker): any {
   const send = (type, data) =>
     new Promise((resolve, reject) => {
       // Unique id to identify the current action
-      const id = generate();
+      const id = uid();
 
       // Listener to handle incoming messages from the worker
       const listener = e => {
