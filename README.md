@@ -2,15 +2,25 @@
 
 A better way of working with web workers. Uses [JavaScript Proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to make communcation with web workers similar to interacting with normal objects.
 
+## Why
+
+Web workers are great to offload work to a different thread in browsers. However, the messaging based API is not very easy to work with. This library makes working with web workers similar to how you'd interact with a local object, thanks to the power of proxies.
+
 ## Features
 
 - Access and set properties on the proxied object asynchronously
 - Call functions on the proxied object and receive the result asynchronously
 - Receive thrown errors without extra handling for serialization
 
+## Requirements
+
+The library expects the `Proxy` and `WeakMap` constructors to be available globally. If you are using a browser which doesn't support these features, make sure to load appropriate polyfills.
+
+The following environments support these features natively: Google Chrome >= 49, Microsoft Edge >= 12, Mozilla Firefox >= 18, Opera >= 36, Safari >= 10, Node >= 6.0.0.
+
 ## Limitations
 
-- Property access and results are asynchronous, instead of a normal value, it'll return a promise
+- Since workers run in a separate thread, all operations are asynchronous, and will return a promise
 - The data passed to and received from the worker needs to be serializable
 
 ## Usage

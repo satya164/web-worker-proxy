@@ -8,10 +8,6 @@ type Worker = {
   +postMessage: (data: mixed) => mixed,
 };
 
-type Target = {
-  +postMessage: (data: mixed) => mixed,
-};
-
 const ACTION_GET = '__$$__SUPER_WORKER__ACTION_GET';
 const ACTION_SET = '__$$__SUPER_WORKER__ACTION_SET';
 const ACTION_CALL = '__$$__SUPER_WORKER__ACTION_CALL';
@@ -119,7 +115,7 @@ export function create(worker: Worker): any {
  * Proxies an object inside an worker.
  * This should be called inside an worker.
  */
-export function proxy(o: Object, target?: Target = self) {
+export function proxy(o: Object, target?: Worker = self) {
   if (proxies.has(target)) {
     throw new Error(
       'The specified target already has a proxy. To create a new proxy, call `dispose` first to dispose the previous proxy.'
@@ -193,13 +189,13 @@ export function proxy(o: Object, target?: Target = self) {
     }
   };
 
-  self.addEventListener('message', listener);
+  target.addEventListener('message', listener);
 
   return {
     // Return a method to dispose the proxy
     // Disposing will remove the listeners and the proxy will stop working
     dispose: () => {
-      self.removeEventListener('message', listener);
+      target.removeEventListener('message', listener);
       proxies.delete(target);
     },
   };
