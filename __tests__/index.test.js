@@ -65,3 +65,26 @@ it('sets values', async () => {
 
   expect(await worker.foo).toBe(42);
 });
+
+it('is able to await a promise multiple times', async () => {
+  expect.assertions(4);
+
+  const name = worker.name;
+
+  expect(await name).toBe('John Doe');
+  expect(await name).toBe('John Doe');
+
+  const error = worker.error();
+
+  try {
+    await error;
+  } catch (e) {
+    expect(e).toEqual(new TypeError('This is not right'));
+  }
+
+  try {
+    await error;
+  } catch (e) {
+    expect(e).toEqual(new TypeError('This is not right'));
+  }
+});

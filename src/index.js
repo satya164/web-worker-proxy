@@ -105,10 +105,10 @@ export function create(worker: Worker): any {
       const then = (succes, error) => {
         if (!promise) {
           // If the cached promise doesn't exist, create a new promise and cache it
-          promise = send(ACTION_GET, { key }).then(succes, error);
+          promise = send(ACTION_GET, { key });
         }
 
-        return promise;
+        return promise.then(succes, error);
       };
 
       // Here we intercept both function calls and property access
