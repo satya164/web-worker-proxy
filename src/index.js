@@ -46,14 +46,31 @@ export function create(worker: Worker): any {
 
           case RESULT_ERROR:
             if (e.data.id === id) {
+              // Try to get the global object
+              const g =
+                // DOM environment in browsers
+                typeof window !== 'undefined'
+                  ? window
+                  : // Web worker environment
+                    typeof self !== 'undefined'
+                    ? self
+                    : //Node environment
+                      typeof global !== 'undefined'
+                      ? // eslint-disable-next-line no-undef
+                        global
+                      : null;
+
+              const { constructor, message, stack } = e.data.error;
+
               // If the error was for current action, reject the promise
               // Try to preserve the error constructor, e.g. TypeError
               const ErrorConstructor =
-                window[e.data.error.constructor] || Error;
-              const error = new ErrorConstructor(e.data.error.message);
+                g && g[constructor] ? g[constructor] : Error;
+
+              const error = new ErrorConstructor(message);
 
               // Preserve the error stack
-              error.stack = e.data.error.stack;
+              error.stack = stack;
 
               reject(error);
               removeListener();
@@ -144,7 +161,8 @@ export function proxy(o: Object, target?: Worker = self) {
           let result;
 
           if (e.data.type === ACTION_SET) {
-            // When setting the value, use Reflect.set, so we get success/failure status
+            // Reflect.set will return a boolean to indicate if setting the property was successful
+            // Setting the property might fail if the object is read only
             result = Reflect.set(o, data.key, data.value);
           } else {
             const prop = o[data.key];

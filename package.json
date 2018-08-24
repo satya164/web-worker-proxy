@@ -23,7 +23,8 @@
     "prebuild": "del lib/",
     "prepare": "yarn build",
     "example": "parcel example/index.html",
-    "precommit": "yarn lint && yarn flow"
+    "test": "jest",
+    "precommit": "yarn lint && yarn flow && yarn test"
   },
   "dependencies": {
     "shortid": "^2.2.13"
@@ -38,7 +39,12 @@
     "flow-bin": "^0.79.1",
     "flow-copy-source": "^2.0.0",
     "husky": "^0.14.3",
+    "jest": "^23.5.0",
     "parcel": "^1.9.7",
     "prettier": "^1.13.5"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/__tests__/**/*.test.js"]
   }
 }

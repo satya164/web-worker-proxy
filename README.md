@@ -12,7 +12,7 @@ Web workers are great to offload work to a different thread in browsers. However
 - Call functions on the proxied object and receive the result asynchronously
 - Receive thrown errors without extra handling for serialization
 
-## Requirements
+## Supported environments
 
 The library expects the `Proxy` and `WeakMap` constructors to be available globally. If you are using a browser which doesn't support these features, make sure to load appropriate polyfills.
 
