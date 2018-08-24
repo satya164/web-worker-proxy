@@ -2,7 +2,7 @@
 
 import { generate } from 'shortid';
 
-type Source = {
+type Worker = {
   +addEventListener: (name: 'message', cb: (e: any) => mixed) => mixed,
   +removeEventListener: (name: 'message', cb: (e: any) => mixed) => mixed,
   +postMessage: (data: mixed) => mixed,
@@ -19,11 +19,13 @@ const ACTION_CALL = '__$$__SUPER_WORKER__ACTION_CALL';
 const RESULT_SUCCESS = '__$$__SUPER_WORKER__RESULT_SUCCESS';
 const RESULT_ERROR = '__$$__SUPER_WORKER__RESULT_ERROR';
 
+const proxies = new WeakMap();
+
 /**
  * Creates a proxied web worker.
  * This should be called in the DOM context.
  */
-export function create(worker: Source): any {
+export function create(worker: Worker): any {
   // Create an empty object to be proxied
   // We don't actually proxy the worker instance
   const o = Object.create(null);
@@ -118,6 +120,14 @@ export function create(worker: Source): any {
  * This should be called inside an worker.
  */
 export function proxy(o: Object, target?: Target = self) {
+  if (proxies.has(target)) {
+    throw new Error(
+      'The specified target already has a proxy. To create a new proxy, call `dispose` first to dispose the previous proxy.'
+    );
+  }
+
+  proxies.set(target, o);
+
   // Create an error response
   // Since we cannot send the error object, we send necessary info to recreate it
   const error = e => ({
@@ -188,6 +198,9 @@ export function proxy(o: Object, target?: Target = self) {
   return {
     // Return a method to dispose the proxy
     // Disposing will remove the listeners and the proxy will stop working
-    dispose: () => self.removeEventListener('message', listener),
+    dispose: () => {
+      self.removeEventListener('message', listener);
+      proxies.delete(target);
+    },
   };
 }
