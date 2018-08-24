@@ -6,12 +6,15 @@ type Worker = {
   +postMessage: (data: mixed) => mixed,
 };
 
-const ACTION_GET = '__$$__SUPER_WORKER__ACTION_GET';
-const ACTION_SET = '__$$__SUPER_WORKER__ACTION_SET';
-const ACTION_CALL = '__$$__SUPER_WORKER__ACTION_CALL';
+const ACTION_GET = '__$$__WEB_WORKER_PROXY__ACTION_GET';
+const ACTION_SET = '__$$__WEB_WORKER_PROXY__ACTION_SET';
+const ACTION_APPLY = '__$$__WEB_WORKER_PROXY__ACTION_APPLY';
 
-const RESULT_SUCCESS = '__$$__SUPER_WORKER__RESULT_SUCCESS';
-const RESULT_ERROR = '__$$__SUPER_WORKER__RESULT_ERROR';
+const RESULT_SUCCESS = '__$$__WEB_WORKER_PROXY__RESULT_SUCCESS';
+const RESULT_ERROR = '__$$__WEB_WORKER_PROXY__RESULT_ERROR';
+const RESULT_CALLBACK = '__$$__WEB_WORKER_PROXY__RESULT_CALLBACK';
+
+const TYPE_FUNCTION = '__$$__WEB_WORKER_PROXY__TYPE_FUNCTION';
 
 const uid = () =>
   Array.from({ length: 128 / 16 }, () =>
@@ -37,6 +40,28 @@ export function create(worker: Worker): any {
       // Unique id to identify the current action
       const id = uid();
 
+      // For function calls, store any callbacks we're sending
+      const callbacks = new Map();
+
+      // Store a variable to indicate whether the task has been fulfilled
+      let fulfilled = false;
+
+      if (type === ACTION_APPLY) {
+        /* $FlowFixMe */
+        data.args = data.args.map(arg => {
+          if (typeof arg === 'function') {
+            const ref = uid();
+            callbacks.set(ref, arg);
+            return {
+              type: TYPE_FUNCTION,
+              ref,
+            };
+          }
+
+          return arg;
+        });
+      }
+
       // Listener to handle incoming messages from the worker
       const listener = e => {
         switch (e.data.type) {
@@ -44,6 +69,9 @@ export function create(worker: Worker): any {
             if (e.data.id === id) {
               // If the success result was for current action, resolve the promise
               resolve(e.data.result);
+
+              fulfilled = true;
+
               removeListener();
             }
 
@@ -77,15 +105,40 @@ export function create(worker: Worker): any {
               error.stack = stack;
 
               reject(error);
+
+              fulfilled = true;
+
               removeListener();
             }
 
             break;
+
+          case RESULT_CALLBACK:
+            if (e.data.id === id) {
+              // Get the referenced callback
+              const { ref, args } = e.data.func;
+              const callback = callbacks.get(ref);
+
+              if (callback) {
+                callback(...args);
+
+                // Remove the callback
+                callbacks.delete(ref);
+              } else {
+                // The callback is already disposed
+              }
+
+              removeListener();
+            }
         }
       };
 
-      const removeListener = () =>
-        worker.removeEventListener('message', listener);
+      const removeListener = () => {
+        if (callbacks.size === 0 && fulfilled) {
+          // Remove the listener once there are no callbacks left and task is fulfilled
+          worker.removeEventListener('message', listener);
+        }
+      };
 
       worker.addEventListener('message', listener);
       worker.postMessage({ type, id, data });
@@ -96,7 +149,7 @@ export function create(worker: Worker): any {
     get(target, key) {
       const func = (...args) =>
         // It's a function call
-        send(ACTION_CALL, { key, args });
+        send(ACTION_APPLY, { key, args });
 
       // We execute the promise lazily and cache it here to avoid calling again
       let promise;
@@ -158,7 +211,7 @@ export function proxy(o: Object, target?: Worker = self) {
     switch (e.data.type) {
       case ACTION_GET:
       case ACTION_SET:
-      case ACTION_CALL: {
+      case ACTION_APPLY: {
         const { id, data } = e.data;
 
         try {
@@ -171,11 +224,43 @@ export function proxy(o: Object, target?: Worker = self) {
           } else {
             const prop = o[data.key];
 
-            if (e.data.type === ACTION_CALL) {
+            if (e.data.type === ACTION_APPLY) {
               if (typeof prop !== 'function') {
                 throw new TypeError(`${data.key} is not a function`);
               } else {
-                result = prop(...data.args);
+                result = prop(
+                  ...data.args.map(arg => {
+                    if (
+                      typeof arg === 'object' &&
+                      arg != null &&
+                      arg.type === TYPE_FUNCTION
+                    ) {
+                      return (() => {
+                        let called = false;
+
+                        return (...params) => {
+                          if (called) {
+                            throw new Error(
+                              'Cannot call callback multiple times'
+                            );
+                          }
+
+                          called = true;
+                          target.postMessage({
+                            type: RESULT_CALLBACK,
+                            id,
+                            func: {
+                              args: params,
+                              ref: arg.ref,
+                            },
+                          });
+                        };
+                      })();
+                    }
+
+                    return arg;
+                  })
+                );
               }
             } else {
               result = prop;

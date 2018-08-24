@@ -21,6 +21,10 @@ const worker = create(
         error() {
           throw new TypeError('This is not right');
         },
+
+        callback(cb) {
+          cb({ foo: 'bar' });
+        },
       },
       self
     );
@@ -87,4 +91,13 @@ it('is able to await a promise multiple times', async () => {
   } catch (e) {
     expect(e).toEqual(new TypeError('This is not right'));
   }
+});
+
+it('executes callback', done => {
+  expect.assertions(1);
+
+  worker.callback(result => {
+    expect(result).toEqual({ foo: 'bar' });
+    done();
+  });
 });

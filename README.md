@@ -15,6 +15,7 @@ Web workers are great to offload work to a different thread in browsers. However
 
 - Access and set properties on the proxied object asynchronously
 - Call functions on the proxied object and receive the result asynchronously
+- Pass basic callbacks to the worker which can be called asynchronously
 - Receive thrown errors without extra handling for serialization
 
 ## Installation
@@ -59,6 +60,11 @@ proxy({
   error() {
     throw new TypeError('This is not right');
   },
+
+  // Calling callbacks
+  callback(cb) {
+    cb({ foo: 'bar' });
+  },
 });
 ```
 
@@ -84,6 +90,11 @@ try {
 worker.works = true;
 
 console.log(await worker.works); // true
+
+// Pass callbacks
+worker.callback(result => {
+  console.log(result); // { foo: 'bar' }
+});
 ```
 
 ## Supported environments
