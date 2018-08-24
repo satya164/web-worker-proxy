@@ -4,8 +4,9 @@ A better way of working with web workers. Uses [JavaScript Proxies](https://deve
 
 ## Features
 
-- Access and set properties on the proxied object in the worker
-- Receive thrown errors without extra code for serialization
+- Access and set properties on the proxied object asynchronously
+- Call functions on the proxied object and receive the result asynchronously
+- Receive thrown errors without extra handling for serialization
 
 ## Limitations
 
@@ -33,19 +34,37 @@ proxy({
 
   // Simple functions
   add: (a, b) => a + b,
+
+  // Async functions
+  timeout: duration =>
+    new Promise(resolve => setTimeout(() => resolve('Hello there'), duration)),
+
+// Throwing errors
+  error() {
+    throw new TypeError('This is not right');
+  },
 });
 ```
 
 Now we can access properties, call methods etc.
 
 ```js
-// Access property
+// Access properties
 console.log(await worker.name); // 'John Doe'
 
-// Call a function and get the result
+// Call functions and get the result
 console.log(await worker.add(2, 3)); // 5
 
-// Set a value
+console.log(await worker.timeout(100)); // Hello there
+
+// Catch errors
+try {
+  await worker.error()
+} catch (e) {
+  console.log(e); // TypeError: This is not right
+}
+
+// Set values
 worker.works = true;
 
 console.log(await worker.works); // true

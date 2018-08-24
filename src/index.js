@@ -118,6 +118,14 @@ export function create(worker: Source): any {
  * This should be called inside an worker.
  */
 export function proxy(o: Object, target?: Target = self) {
+  // Create an error response
+  // Since we cannot send the error object, we send necessary info to recreate it
+  const error = e => ({
+    constructor: e.constructor.name,
+    message: e.message,
+    stack: e.stack,
+  });
+
   // Listen to messages from the client
   const listener = e => {
     switch (e.data.type) {
@@ -146,16 +154,27 @@ export function proxy(o: Object, target?: Target = self) {
             }
           }
 
-          target.postMessage({ type: RESULT_SUCCESS, id, result });
+          // If result is a thenable, resolve the result before sending
+          // This allows us to support results which are promise-like
+          /* $FlowFixMe */
+          if (result && typeof result.then === 'function') {
+            Promise.resolve(result).then(
+              r => target.postMessage({ type: RESULT_SUCCESS, id, result: r }),
+              e =>
+                target.postMessage({
+                  type: RESULT_ERROR,
+                  id,
+                  error: error(e),
+                })
+            );
+          } else {
+            target.postMessage({ type: RESULT_SUCCESS, id, result });
+          }
         } catch (e) {
           target.postMessage({
             type: RESULT_ERROR,
             id,
-            error: {
-              constructor: e.constructor.name,
-              message: e.message,
-              stack: e.stack,
-            },
+            error: error(e),
           });
         }
 
