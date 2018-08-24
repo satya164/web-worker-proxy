@@ -17,16 +17,17 @@ Web workers are great to offload work to a different thread in browsers. However
 - Call functions on the proxied object and receive the result asynchronously
 - Receive thrown errors without extra handling for serialization
 
-## Supported environments
+## Installation
 
-The library expects the `Proxy` and `WeakMap` constructors to be available globally. If you are using a browser which doesn't support these features, make sure to load appropriate polyfills.
+```sh
+npm install web-worker-proxy
+```
 
-The following environments support these features natively: Google Chrome >= 49, Microsoft Edge >= 12, Mozilla Firefox >= 18, Opera >= 36, Safari >= 10, Node >= 6.0.0.
+or
 
-## Limitations
-
-- Since workers run in a separate thread, all operations are asynchronous, and will return a promise
-- The data passed to and received from the worker needs to be serializable
+```sh
+yarn add web-worker-proxy
+```
 
 ## Usage
 
@@ -54,7 +55,7 @@ proxy({
   timeout: duration =>
     new Promise(resolve => setTimeout(() => resolve('Hello there'), duration)),
 
-// Throwing errors
+  // Throwing errors
   error() {
     throw new TypeError('This is not right');
   },
@@ -74,7 +75,7 @@ console.log(await worker.timeout(100)); // Hello there
 
 // Catch errors
 try {
-  await worker.error()
+  await worker.error();
 } catch (e) {
   console.log(e); // TypeError: This is not right
 }
@@ -83,6 +84,43 @@ try {
 worker.works = true;
 
 console.log(await worker.works); // true
+```
+
+## Supported environments
+
+The library expects the `Proxy` and `WeakMap` constructors to be available globally. If you are using a browser which doesn't support these features, make sure to load appropriate polyfills.
+
+The following environments support these features natively: Google Chrome >= 49, Microsoft Edge >= 12, Mozilla Firefox >= 18, Opera >= 36, Safari >= 10, Node >= 6.0.0.
+
+## Limitations
+
+- Since workers run in a separate thread, all operations are asynchronous, and will return a promise
+- The data passed to and received from the worker needs to be serializable
+
+## How it works
+
+The library leverages [proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to intercept actions such as property access, function call etc., and then the details of the actions are sent to the web worker via the messaging API. The proxied object in the web worker recieves and performs the action, then sends the results back via the messaging API. Every action contains a unique id to distinguish itself from other actions.
+
+## Contributing
+
+While developing, you can run the example app and open the console to see your changes:
+
+```sh
+yarn example
+```
+
+Make sure your code passes the unit tests, Flow and ESLint. Run the following to verify:
+
+```sh
+yarn test
+yarn flow
+yarn lint
+```
+
+To fix formatting errors, run the following:
+
+```sh
+yarn lint -- --fix
 ```
 
 <!-- badges -->
