@@ -17,7 +17,7 @@ const createScope = onMessage => {
   return {
     self: {
       postMessage(data) {
-        onMessage(clone(data));
+        setImmediate(() => onMessage(clone(data)));
       },
       addEventListener(name: 'message', listener) {
         listeners.push(listener);

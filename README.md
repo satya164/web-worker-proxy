@@ -15,7 +15,7 @@ Web workers are great to offload work to a different thread in browsers. However
 
 - Access and set properties on the proxied object asynchronously
 - Call functions on the proxied object and receive the result asynchronously
-- Pass basic callbacks to the worker which can be called asynchronously
+- Pass callbacks (limited functionality) to the worker which can be called asynchronously
 - Receive thrown errors without extra handling for serialization
 
 ## Installation
@@ -96,6 +96,24 @@ worker.callback(result => {
   console.log(result); // { foo: 'bar' }
 });
 ```
+
+To prevent memory leaks, callbacks are cleaned up as soon as they are called. Which means, if your callback is supposed to be called multiple times, it won't work. However, you can persist a callback function for as long as you want with the `persist` helper. Persisting a function keeps around the message event listener used for the operation. You must call `dispose` once the function is no longer needed so that the listener can be cleaned up.
+
+```js
+import { persist } from 'web-worker-proxy';
+
+const callback = persist(result => {
+  if (result.done) {
+    callback.dispose();
+  } else {
+    console.log(result);
+  }
+});
+
+worker.subscribe(callback);
+```
+
+Also note that callback functions are one-way. You cannot return a value from a callback function.
 
 ## Supported environments
 

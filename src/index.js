@@ -9,12 +9,15 @@ type Worker = {
 const ACTION_GET = '__$$__WEB_WORKER_PROXY__ACTION_GET';
 const ACTION_SET = '__$$__WEB_WORKER_PROXY__ACTION_SET';
 const ACTION_APPLY = '__$$__WEB_WORKER_PROXY__ACTION_APPLY';
+const ACTION_DISPOSE = '__$$__WEB_WORKER_PROXY__ACTION_DISPOSE';
 
 const RESULT_SUCCESS = '__$$__WEB_WORKER_PROXY__RESULT_SUCCESS';
 const RESULT_ERROR = '__$$__WEB_WORKER_PROXY__RESULT_ERROR';
 const RESULT_CALLBACK = '__$$__WEB_WORKER_PROXY__RESULT_CALLBACK';
 
 const TYPE_FUNCTION = '__$$__WEB_WORKER_PROXY__TYPE_FUNCTION';
+const TYPE_PERSISTED_FUNCTION =
+  '__$$__WEB_WORKER_PROXY__TYPE_PERSISTED_FUNCTION';
 
 const uid = () =>
   Array.from({ length: 128 / 16 }, () =>
@@ -49,12 +52,45 @@ export function create(worker: Worker): any {
       if (type === ACTION_APPLY) {
         /* $FlowFixMe */
         data.args = data.args.map(arg => {
+          // If the argument is a callback function, we create a ref and store the function
+          // We also replace the argument with the ref instead
+          // Otherwise we just return it
           if (typeof arg === 'function') {
             const ref = uid();
             callbacks.set(ref, arg);
             return {
               type: TYPE_FUNCTION,
               ref,
+            };
+          }
+
+          // Persisted functions are like normal functions, but can be called multiple times
+          // We clean it up only when the user disposes it
+          if (
+            typeof arg === 'object' &&
+            arg != null &&
+            arg.type === TYPE_PERSISTED_FUNCTION
+          ) {
+            const ref = uid();
+            callbacks.set(ref, arg);
+
+            // Add a listener to the persisted function to listen for dispose
+            // When the function is disposed, we delete it and remove the listeners
+            // We also notify the worker that this function is disposed and can no longer be called
+            arg.listeners.push(() => {
+              callbacks.delete(ref);
+              removeListener();
+
+              worker.postMessage({
+                type: ACTION_DISPOSE,
+                ref,
+              });
+            });
+
+            return {
+              type: TYPE_FUNCTION,
+              ref,
+              persisted: true,
             };
           }
 
@@ -120,12 +156,17 @@ export function create(worker: Worker): any {
               const callback = callbacks.get(ref);
 
               if (callback) {
-                callback(...args);
+                if (callback.type === TYPE_PERSISTED_FUNCTION) {
+                  callback.func(...args);
+                } else {
+                  callback(...args);
 
-                // Remove the callback
-                callbacks.delete(ref);
+                  // Remove the callback
+                  callbacks.delete(ref);
+                }
               } else {
-                // The callback is already disposed
+                // Callback is already disposed
+                // This shouldn't happen
               }
 
               removeListener();
@@ -208,6 +249,9 @@ export function proxy(o: Object, target?: Worker = self) {
 
   // Listen to messages from the client
   const listener = e => {
+    // List of persisted function refs
+    const persisted = [];
+
     switch (e.data.type) {
       case ACTION_GET:
       case ACTION_SET:
@@ -229,19 +273,28 @@ export function proxy(o: Object, target?: Worker = self) {
                 throw new TypeError(`${data.key} is not a function`);
               } else {
                 result = prop(
+                  // Loop through the results to find if there are callback functions
                   ...data.args.map(arg => {
                     if (
                       typeof arg === 'object' &&
                       arg != null &&
                       arg.type === TYPE_FUNCTION
                     ) {
+                      // If we find a ref for a function, replace it with a custom function
+                      // This function can notify the parent when it receives arguments
                       return (() => {
                         let called = false;
 
+                        if (arg.persisted) {
+                          // If the function is persisted, add it to the persisted list
+                          persisted.push(arg.ref);
+                        }
+
                         return (...params) => {
-                          if (called) {
+                          if (called && !persisted.includes(arg.ref)) {
+                            // If function was called before and is no longer persisted, don't send results back
                             throw new Error(
-                              'Cannot call callback multiple times'
+                              'Callback has been disposed and no longer available.'
                             );
                           }
 
@@ -293,6 +346,15 @@ export function proxy(o: Object, target?: Worker = self) {
 
         break;
       }
+
+      case ACTION_DISPOSE: {
+        // Remove the callback ref from persisted list when it's disposed
+        const index = persisted.indexOf(e.data.ref);
+
+        if (index > -1) {
+          persisted.slice(index, 1);
+        }
+      }
     }
   };
 
@@ -305,5 +367,19 @@ export function proxy(o: Object, target?: Worker = self) {
       target.removeEventListener('message', listener);
       proxies.delete(target);
     },
+  };
+}
+
+/**
+ * Persist a callback function so it can be called multiple times
+ */
+export function persist(func: Function) {
+  return {
+    type: TYPE_PERSISTED_FUNCTION,
+    func,
+    dispose() {
+      this.listeners.forEach(listener => listener());
+    },
+    listeners: [],
   };
 }

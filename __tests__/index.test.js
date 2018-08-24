@@ -1,6 +1,7 @@
 /* @flow */
+/* eslint-env node */
 
-import { create, proxy } from '../src/index';
+import { create, proxy, persist } from '../src/index';
 import WorkerMock from './__utils__/WorkerMock';
 
 const worker = create(
@@ -22,8 +23,10 @@ const worker = create(
           throw new TypeError('This is not right');
         },
 
-        callback(cb) {
-          cb({ foo: 'bar' });
+        callback(cb, count = 1) {
+          for (let i = 0; i < count; i++) {
+            cb({ foo: 'bar', index: i });
+          }
         },
       },
       self
@@ -93,11 +96,29 @@ it('is able to await a promise multiple times', async () => {
   }
 });
 
-it('executes callback', done => {
+it('executes simple callback', done => {
   expect.assertions(1);
 
   worker.callback(result => {
-    expect(result).toEqual({ foo: 'bar' });
+    expect(result).toEqual({ foo: 'bar', index: 0 });
     done();
   });
+});
+
+it('executes persisted callback multiple times', done => {
+  expect.assertions(3);
+
+  const callback = persist(result => {
+    if (result.index === 0) {
+      expect(result).toEqual({ foo: 'bar', index: 0 });
+    } else if (result.index === 1) {
+      expect(result).toEqual({ foo: 'bar', index: 1 });
+    } else {
+      expect(result).toEqual({ foo: 'bar', index: 2 });
+      callback.dispose();
+      done();
+    }
+  });
+
+  worker.callback(callback, 3);
 });
