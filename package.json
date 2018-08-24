@@ -38,10 +38,13 @@
     "husky": "^0.14.3",
     "jest": "^23.5.0",
     "parcel": "^1.9.7",
-    "prettier": "^1.13.5"
+    "prettier": "^1.13.5",
+    "structured-clone": "^0.2.2"
   },
   "jest": {
     "testEnvironment": "node",
-    "testMatch": ["**/__tests__/**/*.test.js"]
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
   }
 }

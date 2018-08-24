@@ -65,12 +65,11 @@ export function create(worker: Worker): any {
                         global
                       : null;
 
-              const { constructor, message, stack } = e.data.error;
+              const { name, message, stack } = e.data.error;
 
               // If the error was for current action, reject the promise
               // Try to preserve the error constructor, e.g. TypeError
-              const ErrorConstructor =
-                g && g[constructor] ? g[constructor] : Error;
+              const ErrorConstructor = g && g[name] ? g[name] : Error;
 
               const error = new ErrorConstructor(message);
 
@@ -149,7 +148,7 @@ export function proxy(o: Object, target?: Worker = self) {
   // Create an error response
   // Since we cannot send the error object, we send necessary info to recreate it
   const error = e => ({
-    constructor: e.constructor.name,
+    name: e.constructor.name,
     message: e.message,
     stack: e.stack,
   });

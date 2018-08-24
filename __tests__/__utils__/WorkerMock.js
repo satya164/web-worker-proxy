@@ -1,6 +1,8 @@
 /* @flow */
 /* eslint-env node */
 
+import clone from 'structured-clone';
+
 type Worker = {
   addEventListener: (name: 'message', cb: (e: any) => mixed) => mixed,
   removeEventListener: (name: 'message', cb: (e: any) => mixed) => mixed,
@@ -15,7 +17,7 @@ const createScope = onMessage => {
   return {
     self: {
       postMessage(data) {
-        onMessage(JSON.parse(JSON.stringify(data)));
+        onMessage(clone(data));
       },
       addEventListener(name: 'message', listener) {
         listeners.push(listener);
