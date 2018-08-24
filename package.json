@@ -11,6 +11,11 @@
     "lib/"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satya164/web-worker-proxy.git"
+  },
+  "author": "Satyajit Sahoo <satyajit.happy@gmail.com> (https://github.com/satya164/)",
   "scripts": {
     "lint": "eslint .",
     "flow": "flow",
