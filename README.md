@@ -1,4 +1,9 @@
-# Web worker proxy
+# web-worker-proxy
+
+[![Build Status][build-badge]][build]
+[![MIT License][license-badge]][license]
+[![Version][version-badge]][package]
+[![Bundle size (minified + gzip)][bundle-size-badge]][bundle-size]
 
 A better way of working with web workers. Uses [JavaScript Proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to make communcation with web workers similar to interacting with normal objects.
 
@@ -79,3 +84,14 @@ worker.works = true;
 
 console.log(await worker.works); // true
 ```
+
+<!-- badges -->
+
+[build-badge]: https://img.shields.io/circleci/project/github/satya164/web-worker-proxy/master.svg?style=flat-square
+[build]: https://circleci.com/gh/satya164/web-worker-proxy
+[license-badge]: https://img.shields.io/npm/l/web-worker-proxy.svg?style=flat-square
+[license]: https://opensource.org/licenses/MIT
+[version-badge]: https://img.shields.io/npm/v/web-worker-proxy.svg?style=flat-square
+[package]: https://www.npmjs.com/package/web-worker-proxy
+[bundle-size-badge]: https://img.shields.io/bundlephobia/minzip/web-worker-proxy.svg?style=flat-square
+[bundle-size]: https://bundlephobia.com/result?p=web-worker-proxy
