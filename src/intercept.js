@@ -10,15 +10,15 @@ export default function intercept(
   o: Function | Object = {},
   actions: Action[] = []
 ): any {
+  // We execute the promise lazily and cache it here to avoid calling again
+  let promise;
+
   return new Proxy(o, {
     get(target, key) {
       // Here we intercept both function calls and property access
       // If the key was `then`, we create a `thenable` so that the result can be awaited
       // This makes sure that the result can be used like a promise in case it's a property access
       if (key === 'then') {
-        // We execute the promise lazily and cache it here to avoid calling again
-        let promise;
-
         const then = (success, error) => {
           if (!promise) {
             // If the cached promise doesn't exist, create a new promise and cache it
@@ -34,7 +34,8 @@ export default function intercept(
       }
 
       function func(...args) {
-        if (this instanceof func) {
+        /* $FlowFixMe */
+        if (new.target) {
           // It's an object construction
           return callback([...actions, { type: 'construct', key, args }]);
         } else {

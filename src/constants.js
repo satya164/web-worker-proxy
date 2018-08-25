@@ -10,3 +10,6 @@ export const RESULT_CALLBACK = '__$$__WEB_WORKER_PROXY__RESULT_CALLBACK';
 export const TYPE_FUNCTION = '__$$__WEB_WORKER_PROXY__TYPE_FUNCTION';
 export const TYPE_PERSISTED_FUNCTION =
   '__$$__WEB_WORKER_PROXY__TYPE_PERSISTED_FUNCTION';
+
+export const MESSAGE_DISPOSED_ERROR =
+  'The function has been disposed and is no longer available.';

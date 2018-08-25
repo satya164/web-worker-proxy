@@ -1,5 +1,6 @@
 /* @flow */
 /* eslint-env node */
+/* istanbul ignore file */
 
 import clone from 'structured-clone';
 

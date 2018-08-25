@@ -36,7 +36,12 @@ jobs:
       steps:
         - attach_workspace:
             at: ~/project
-        - run: yarn test
+        - run: |
+            yarn test --coverage
+            cat ./coverage/lcov.info | ./node_modules/.bin/codecov
+        - store_artifacts:
+            path: coverage
+            destination: coverage
 
 workflows:
   version: 2

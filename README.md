@@ -1,6 +1,7 @@
 # web-worker-proxy
 
 [![Build Status][build-badge]][build]
+[![Code Coverage][coverage-badge]][coverage]
 [![MIT License][license-badge]][license]
 [![Version][version-badge]][package]
 [![Bundle size (minified + gzip)][bundle-size-badge]][bundle-size]
@@ -116,7 +117,7 @@ worker.methods.validate(result => {
 });
 ```
 
-To prevent memory leaks, callbacks are cleaned up as soon as they are called. Which means, if your callback is supposed to be called multiple times, it won't work. However, you can persist a callback function for as long as you want with the `persist` helper. Persisting a function keeps around the message event listener used for the operation. You must call `dispose` once the function is no longer needed so that the listener can be cleaned up.
+To prevent memory leaks, callbacks are cleaned up as soon as they are called. Which means, if your callback is supposed to be called multiple times, it won't work. However, you can persist a callback function for as long as you want with the `persist` helper. Persisting a function keeps around the event listeners. You must call `dispose` once the function is no longer needed so that they can be cleaned up.
 
 ```js
 import { persist } from 'web-worker-proxy';
@@ -190,6 +191,8 @@ yarn lint -- --fix
 
 [build-badge]: https://img.shields.io/circleci/project/github/satya164/web-worker-proxy/master.svg?style=flat-square
 [build]: https://circleci.com/gh/satya164/web-worker-proxy
+[coverage-badge]: https://img.shields.io/codecov/c/github/satya164/web-worker-proxy.svg?style=flat-square
+[coverage]: https://codecov.io/github/satya164/web-worker-proxy
 [license-badge]: https://img.shields.io/npm/l/web-worker-proxy.svg?style=flat-square
 [license]: https://opensource.org/licenses/MIT
 [version-badge]: https://img.shields.io/npm/v/web-worker-proxy.svg?style=flat-square

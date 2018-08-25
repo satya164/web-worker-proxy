@@ -7,6 +7,7 @@ import {
   RESULT_ERROR,
   RESULT_CALLBACK,
   TYPE_FUNCTION,
+  MESSAGE_DISPOSED_ERROR,
 } from './constants';
 import type { Worker } from './types';
 
@@ -33,11 +34,11 @@ export default function proxy(o: Object, target?: Worker = self) {
     stack: e.stack,
   });
 
+  // List of persisted function refs
+  const persisted = [];
+
   // Listen to messages from the client
   const listener = (e: any) => {
-    // List of persisted function refs
-    const persisted = [];
-
     switch (e.data.type) {
       case ACTION_OPERATION:
         {
@@ -57,7 +58,7 @@ export default function proxy(o: Object, target?: Worker = self) {
                 const prop = result[action.key];
 
                 if (typeof prop !== 'function') {
-                  throw new TypeError(`${data.key} is not a function`);
+                  throw new TypeError(`${action.key} is not a function`);
                 } else {
                   result = prop(
                     // Loop through the results to find if there are callback functions
@@ -80,9 +81,7 @@ export default function proxy(o: Object, target?: Worker = self) {
                           return (...params) => {
                             if (called && !persisted.includes(arg.ref)) {
                               // If function was called before and is no longer persisted, don't send results back
-                              throw new Error(
-                                'Callback has been disposed and no longer available.'
-                              );
+                              throw new Error(MESSAGE_DISPOSED_ERROR);
                             }
 
                             called = true;
@@ -103,7 +102,7 @@ export default function proxy(o: Object, target?: Worker = self) {
                   );
                 }
               } else {
-                throw new Error(`Unsupported operation ${action.type}`);
+                throw new Error(`Unsupported operation "${action.type}"`);
               }
             }
 
@@ -141,7 +140,7 @@ export default function proxy(o: Object, target?: Worker = self) {
           const index = persisted.indexOf(e.data.ref);
 
           if (index > -1) {
-            persisted.slice(index, 1);
+            persisted.splice(index, 1);
           }
         }
 

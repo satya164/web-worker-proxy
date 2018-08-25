@@ -71,11 +71,43 @@ it('intercepts construction', async () => {
     expect(actions).toEqual([
       { type: 'get', key: 'foo' },
       { type: 'get', key: 'bar' },
-      { type: 'apply', key: 'baz', args: ['yo', 42] },
+      { type: 'construct', key: 'baz', args: ['yo', 42] },
     ]);
 
     return 'hello world';
   });
 
   expect(await new o.foo.bar.baz('yo', 42)).toBe('hello world');
+});
+
+it('returns cached promise when accessed from saved variable', async () => {
+  expect.assertions(1);
+
+  const o = intercept(async () => {
+    // Return an object so we compare references
+    return {};
+  });
+
+  const { baz } = o.foo.bar;
+
+  const a = await baz;
+  const b = await baz;
+
+  expect(a).toBe(b);
+});
+
+it('executes again when accessed directly', async () => {
+  expect.assertions(2);
+
+  let i = 0;
+
+  const o = intercept(async () => {
+    return i++;
+  });
+
+  const a = await o.foo.bar.baz;
+  const b = await o.foo.bar.baz;
+
+  expect(a).toBe(0);
+  expect(b).toBe(1);
 });

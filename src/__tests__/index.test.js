@@ -17,9 +17,15 @@ const worker = create(
         methods: {
           add: (a, b) => a + b,
 
-          timeout: duration =>
-            new Promise(resolve =>
-              setTimeout(() => resolve('Hello there'), duration)
+          timeout: (duration, error) =>
+            new Promise((resolve, reject) =>
+              setTimeout(
+                () =>
+                  error
+                    ? reject(new Error("Can't do this anymore"))
+                    : resolve('Hello there'),
+                duration
+              )
             ),
 
           error() {
@@ -60,9 +66,15 @@ it('gets result from synchronous function', async () => {
 });
 
 it('gets result from async function', async () => {
-  expect.assertions(1);
+  expect.assertions(2);
 
   expect(await worker.methods.timeout(0)).toBe('Hello there');
+
+  try {
+    await worker.methods.timeout(0, true);
+  } catch (e) {
+    expect(e.message).toBe("Can't do this anymore");
+  }
 });
 
 it('catches thrown errors', async () => {

@@ -30,6 +30,7 @@
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-flow": "^6.23.0",
+    "codecov": "^3.0.4",
     "del-cli": "^1.1.0",
     "eslint": "^4.19.1",
     "eslint-config-satya164": "^1.0.2",

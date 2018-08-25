@@ -62,7 +62,7 @@ export default function create(worker: Worker): any {
               // Add a listener to the persisted function to listen for dispose
               // When the function is disposed, we delete it and remove the listeners
               // We also notify the worker that this function is disposed and can no longer be called
-              arg.listeners.push(() => {
+              arg.on('dispose', () => {
                 callbacks.delete(ref);
                 removeListener();
 
@@ -143,7 +143,7 @@ export default function create(worker: Worker): any {
 
               if (callback) {
                 if (callback.type === TYPE_PERSISTED_FUNCTION) {
-                  callback.func(...args);
+                  callback.apply(...args);
                 } else {
                   callback(...args);
 
@@ -151,9 +151,8 @@ export default function create(worker: Worker): any {
                   callbacks.delete(ref);
                 }
               } else {
-                throw new Error(
-                  'Callback has been disposed and no longer available.'
-                );
+                // Function is already disposed
+                // This shouldn't happen
               }
 
               removeListener();
