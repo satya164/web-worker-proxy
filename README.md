@@ -32,7 +32,7 @@ yarn add web-worker-proxy
 
 ## Usage
 
-First, we need to wrap create a proxied worker:
+First, we need to wrap our worker to be able to access the proxied object in the worker:
 
 ```js
 import { create } from 'web-worker-proxy';
@@ -40,7 +40,7 @@ import { create } from 'web-worker-proxy';
 const worker = create(new Worker('worker.js'));
 ```
 
-Inside the web worker, we need to do wrap the target object:
+Inside the web worker, we need to do wrap the target object to proxy it:
 
 ```js
 import { proxy } from 'web-worker-proxy';
@@ -69,7 +69,7 @@ When accessing a property or calling a function, you'll get `thenable` as the va
 
 ### Accessing a property
 
-You can access any serialzable properties on the proxied object asynchronously.
+You can access any serializable properties on the proxied object asynchronously.
 
 ```js
 // Serializable values
@@ -92,7 +92,9 @@ worker.thisisawesome = true;
 
 ### Calling methods
 
-You can call methods on the proxied object, and pass any serializable arguments to it. The method will return a promise which will resolve to the value returned in the worker. The method on the proxied object can return any serialzable value or a promise which returns a serializable value. You can also catch errors thrown from it.
+You can call methods on the proxied object, and pass any serializable arguments to it. The method will return a promise which will resolve to the value returned in the worker.
+
+The method on the proxied object can return any serializable value or a promise which returns a serializable value. You can also catch errors thrown from it.
 
 ```js
 try {
@@ -102,7 +104,11 @@ try {
 }
 ```
 
-It's also possible to pass callbacks. The arguments to the callback function must be serialzable. Also, the callback functions are one-way, which means, you cannot return a value from a callback function.
+It's also possible to pass callbacks to methods, with some limitations:
+
+- The arguments to the callback function must be serializable
+- The callback functions are one-way, which means, you cannot return a value from a callback function
+- The callback functions must be direct arguments to the method, it cannot be nested inside an object
 
 ```js
 worker.methods.validate(result => {
@@ -125,6 +131,22 @@ const callback = persist(result => {
 
 worker.subscribe(callback);
 ```
+
+## API
+
+### `create(worker: Worker)`
+
+Create a proxy object which wraps the worker and allows you to interact with the proxied object inside the worker. It can take any object which implements the `postMessage` interface and the event interface (`addEventListener` and `removeListener`).
+
+### `proxy(object: Object, target?: Worker = self)`
+
+Proxy an object so it can be interacted with. The first argument is the object to proxy, and the second argument is an object which implements the `postMessage` interface and the event interface, it defaults to `self`. It returns an object with a `dispose` method to dispose the proxy.
+
+There can be only one proxy active for a given target at a time. To proxy a different object, we first need to dispose the previous proxy first by using the `disposed` method.
+
+### `persist(function: Function)`
+
+Wrap a function so it can be persisted when passed as a callback. Returns an object with a `dispose` method to dispose the persisted function.
 
 ## Browser compatibility
 
