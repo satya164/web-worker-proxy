@@ -7,6 +7,8 @@ proxy({
 
   fruits: ['orange', 'banana'],
 
+  show: { name: 'Star Wars', genre: 'SciFi' },
+
   add: (a, b) => a + b,
 
   timeout: duration =>

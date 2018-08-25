@@ -1,8 +1,8 @@
 /* @flow */
 /* eslint-env node */
 
-import { create, proxy, persist } from '../src/index';
-import WorkerMock from './__utils__/WorkerMock';
+import { create, proxy, persist } from '../index';
+import WorkerMock from '../__utils__/WorkerMock';
 
 const worker = create(
   new WorkerMock(self => {
@@ -12,21 +12,25 @@ const worker = create(
 
         fruits: ['orange', 'banana'],
 
-        add: (a, b) => a + b,
+        show: { name: 'Star Wars', genre: 'SciFi' },
 
-        timeout: duration =>
-          new Promise(resolve =>
-            setTimeout(() => resolve('Hello there'), duration)
-          ),
+        methods: {
+          add: (a, b) => a + b,
 
-        error() {
-          throw new TypeError('This is not right');
-        },
+          timeout: duration =>
+            new Promise(resolve =>
+              setTimeout(() => resolve('Hello there'), duration)
+            ),
 
-        callback(cb, count = 1) {
-          for (let i = 0; i < count; i++) {
-            cb({ foo: 'bar', index: i });
-          }
+          error() {
+            throw new TypeError('This is not right');
+          },
+
+          callback(cb, count = 1) {
+            for (let i = 0; i < count; i++) {
+              cb({ foo: 'bar', index: i });
+            }
+          },
         },
       },
       self
@@ -35,29 +39,37 @@ const worker = create(
 );
 
 it('accesses serializable properties', async () => {
-  expect.assertions(2);
+  expect.assertions(3);
 
   expect(await worker.name).toBe('John Doe');
   expect(await worker.fruits).toEqual(['orange', 'banana']);
+  expect(await worker.show).toEqual({ name: 'Star Wars', genre: 'SciFi' });
+});
+
+it('accesses nested properties', async () => {
+  expect.assertions(2);
+
+  expect(await worker.show.genre).toEqual('SciFi');
+  expect(await worker.fruits[1]).toEqual('banana');
 });
 
 it('gets result from synchronous function', async () => {
   expect.assertions(1);
 
-  expect(await worker.add(3, 7)).toBe(10);
+  expect(await worker.methods.add(3, 7)).toBe(10);
 });
 
 it('gets result from async function', async () => {
   expect.assertions(1);
 
-  expect(await worker.timeout(0)).toBe('Hello there');
+  expect(await worker.methods.timeout(0)).toBe('Hello there');
 });
 
 it('catches thrown errors', async () => {
   expect.assertions(1);
 
   try {
-    await worker.error();
+    await worker.methods.error();
   } catch (e) {
     expect(e).toEqual(new TypeError('This is not right'));
   }
@@ -81,7 +93,7 @@ it('is able to await a promise multiple times', async () => {
   expect(await name).toBe('John Doe');
   expect(await name).toBe('John Doe');
 
-  const error = worker.error();
+  const error = worker.methods.error();
 
   try {
     await error;
@@ -99,7 +111,7 @@ it('is able to await a promise multiple times', async () => {
 it('executes simple callback', done => {
   expect.assertions(1);
 
-  worker.callback(result => {
+  worker.methods.callback(result => {
     expect(result).toEqual({ foo: 'bar', index: 0 });
     done();
   });
@@ -120,5 +132,5 @@ it('executes persisted callback multiple times', done => {
     }
   });
 
-  worker.callback(callback, 3);
+  worker.methods.callback(callback, 3);
 });

@@ -6,6 +6,10 @@ const worker = create(new Worker('./worker.js'));
 
 worker.name.then(console.log);
 worker.fruits.then(console.log);
+worker.show.then(console.log);
+
+worker.fruits[1].then(console.log);
+worker.show.genre.then(console.log);
 
 worker.add(3, 4).then(console.log);
 worker.timeout(100).then(console.log);

@@ -13,7 +13,7 @@ Web workers are great to offload work to a different thread in browsers. However
 
 ## Features
 
-- Access and set properties on the proxied object asynchronously
+- Access and set properties on the proxied object asynchronously, even nested ones
 - Call functions on the proxied object and receive the result asynchronously
 - Pass callbacks (limited functionality) to the worker which can be called asynchronously
 - Receive thrown errors without extra handling for serialization
@@ -47,7 +47,7 @@ import { proxy } from 'web-worker-proxy';
 
 proxy({
   // Serializable properties
-  name: 'John Doe',
+  name: { first: 'John', last: 'Doe' },
 
   // Simple functions
   add: (a, b) => a + b,
@@ -68,11 +68,11 @@ proxy({
 });
 ```
 
-Now we can access properties, call methods etc.
+Now we can access properties, call methods etc. by using the `await` keyword, or passing a callback to `then`:
 
 ```js
 // Access properties
-console.log(await worker.name); // 'John Doe'
+console.log(await worker.name.first); // 'John'
 
 // Call functions and get the result
 console.log(await worker.add(2, 3)); // 5
@@ -123,7 +123,7 @@ The following environments support these features natively: Google Chrome >= 49,
 
 ## Limitations
 
-- Since workers run in a separate thread, all operations are asynchronous, and will return a promise
+- Since workers run in a separate thread, all operations are asynchronous, and will return thenables
 - The data passed to and received from the worker needs to be serializable
 
 ## How it works
