@@ -46,54 +46,67 @@ Inside the web worker, we need to do wrap the target object:
 import { proxy } from 'web-worker-proxy';
 
 proxy({
-  // Serializable properties
   name: { first: 'John', last: 'Doe' },
-
-  // Simple functions
   add: (a, b) => a + b,
-
-  // Async functions
-  timeout: duration =>
-    new Promise(resolve => setTimeout(() => resolve('Hello there'), duration)),
-
-  // Throwing errors
-  error() {
-    throw new TypeError('This is not right');
-  },
-
-  // Calling callbacks
-  callback(cb) {
-    cb({ foo: 'bar' });
-  },
 });
 ```
 
 Now we can access properties, call methods etc. by using the `await` keyword, or passing a callback to `then`:
 
 ```js
-// Access properties
 console.log(await worker.name.first); // 'John'
 
-// Call functions and get the result
-console.log(await worker.add(2, 3)); // 5
+// or
 
-console.log(await worker.timeout(100)); // Hello there
+worker.name.first.then(result => {
+  console.log(result); // 'John'
+});
+```
 
-// Catch errors
+When accessing a property or calling a function, you'll get `thenable` as the value. It's lazy, so the actual operation doesn't start until you await the value or call `.then` on it.
+
+## Supported operations
+
+### Accessing a property
+
+You can access any serialzable properties on the proxied object asynchronously.
+
+```js
+// Serializable values
+console.log(await worker.name);
+
+// Nested properties
+console.log(await worker.name.first);
+
+// Even array indexes
+console.log(await worker.items[0]);
+```
+
+### Adding or updating a property
+
+You can add a new property on the proxied object, or create a new one. It can be a nested property too.
+
+```js
+worker.thisisawesome = true;
+```
+
+### Calling methods
+
+You can call methods on the proxied object, and pass any serializable arguments to it. The method will return a promise which will resolve to the value returned in the worker. The method on the proxied object can return any serialzable value or a promise which returns a serializable value. You can also catch errors thrown from it.
+
+```js
 try {
-  await worker.error();
+  const result = await worker.add(2, 3);
 } catch (e) {
-  console.log(e); // TypeError: This is not right
+  console.log(e);
 }
+```
 
-// Set values
-worker.works = true;
+It's also possible to pass callbacks. The arguments to the callback function must be serialzable. Also, the callback functions are one-way, which means, you cannot return a value from a callback function.
 
-console.log(await worker.works); // true
-
-// Pass callbacks
-worker.callback(result => {
-  console.log(result); // { foo: 'bar' }
+```js
+worker.methods.validate(result => {
+  console.log(result);
 });
 ```
 
@@ -113,9 +126,7 @@ const callback = persist(result => {
 worker.subscribe(callback);
 ```
 
-Also note that callback functions are one-way. You cannot return a value from a callback function.
-
-## Supported environments
+## Browser compatibility
 
 The library expects the `Proxy` and `WeakMap` constructors to be available globally. If you are using a browser which doesn't support these features, make sure to load appropriate polyfills.
 
@@ -124,7 +135,8 @@ The following environments support these features natively: Google Chrome >= 49,
 ## Limitations
 
 - Since workers run in a separate thread, all operations are asynchronous, and will return thenables
-- The data passed to and received from the worker needs to be serializable
+- The transferred data needs to be serializable, most browsers implement the [structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) for transferring data
+- The transferred data is always copied, which means the references will be different, and any mutations won't be visible
 
 ## How it works
 

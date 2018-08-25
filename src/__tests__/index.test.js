@@ -80,9 +80,10 @@ it('sets values', async () => {
 
   expect(await worker.foo).toBe(undefined);
 
-  worker.foo = 42;
+  worker.foo = {};
+  worker.foo.baz = 42;
 
-  expect(await worker.foo).toBe(42);
+  expect(await worker.foo.baz).toBe(42);
 });
 
 it('is able to await a promise multiple times', async () => {
