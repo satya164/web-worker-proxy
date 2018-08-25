@@ -23,7 +23,7 @@ export default function proxy(o: Object, target?: Worker = self) {
     );
   }
 
-  proxies.set(target, o);
+  proxies.set(target, true);
 
   // Create an error response
   // Since we cannot send the error object, we send necessary info to recreate it
