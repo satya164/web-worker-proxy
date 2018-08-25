@@ -2,7 +2,7 @@
 /* eslint-env node */
 
 import { create, proxy, persist } from '../index';
-import WorkerMock from '../__utils__/WorkerMock';
+import WorkerMock from './__utils__/WorkerMock';
 
 const worker = create(
   new WorkerMock(self => {
