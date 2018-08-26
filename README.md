@@ -33,17 +33,19 @@ yarn add web-worker-proxy
 
 ## Usage
 
-First, we need to wrap our worker to be able to access the proxied object in the worker:
+First, we need to wrap our worker:
 
 ```js
+// app.js
 import { create } from 'web-worker-proxy';
 
 const worker = create(new Worker('worker.js'));
 ```
 
-Inside the web worker, we need to do wrap the target object to proxy it:
+Inside the web worker, we need to wrap the target object to proxy it:
 
 ```js
+// worker.js
 import { proxy } from 'web-worker-proxy';
 
 proxy({
@@ -64,13 +66,13 @@ worker.name.first.then(result => {
 });
 ```
 
-When accessing a property or calling a function, you'll get `thenable` as the value. It's lazy, so the actual operation doesn't start until you await the value or call `.then` on it.
+Accessing properties is lazy, so the actual operation doesn't start until you await the value or call `then` on it.
 
 ## Supported operations
 
 ### Accessing a property
 
-You can access any serializable properties on the proxied object asynchronously.
+You can access any serializable properties on the proxied object asynchronously:
 
 ```js
 // Serializable values
@@ -79,23 +81,31 @@ console.log(await worker.name);
 // Nested properties
 console.log(await worker.name.first);
 
-// Even array indexes
+// Even array indices
 console.log(await worker.items[0]);
+```
+
+When accessing a property, you'll get a thenable (an object with a `then` method), not an normal promise. If you want to use it as a normal promise, wrap it in `Promise.resolve`:
+
+```js
+// Now you can call `catch` on the promise
+Promise.resolve(worker.name.first).catch(error => {
+  console.log(error);
+});
 ```
 
 ### Adding or updating a property
 
-You can add a new property on the proxied object, or create a new one. It can be a nested property too.
+You can add a new property on the proxied object, or create a new one. It can be a nested property too:
 
 ```js
-worker.thisisawesome = true;
+worker.thisisawesome = {};
+worker.thisisawesome.stuff = 42;
 ```
 
 ### Calling methods
 
-You can call methods on the proxied object, and pass any serializable arguments to it. The method will return a promise which will resolve to the value returned in the worker.
-
-The method on the proxied object can return any serializable value or a promise which returns a serializable value. You can also catch errors thrown from it.
+You can call methods on the proxied object, and pass any serializable arguments to it. The method will return a promise which will resolve to the value returned in the worker. You can also catch errors thrown from it:
 
 ```js
 try {
@@ -104,6 +114,8 @@ try {
   console.log(e);
 }
 ```
+
+The method on the proxied object can return any serializable value or a promise which returns a serializable value.
 
 It's also possible to pass callbacks to methods, with some limitations:
 
@@ -164,6 +176,12 @@ The following environments support these features natively: Google Chrome >= 49,
 ## How it works
 
 The library leverages [proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to intercept actions such as property access, function call etc., and then the details of the actions are sent to the web worker via the messaging API. The proxied object in the web worker recieves and performs the action, then sends the results back via the messaging API. Every action contains a unique id to distinguish itself from other actions.
+
+## Alternatives
+
+- [comlink](https://github.com/GoogleChromeLabs/comlink)
+- [workway](https://github.com/WebReflection/workway)
+- [workerize](https://github.com/developit/workerize)
 
 ## Contributing
 
