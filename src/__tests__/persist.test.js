@@ -9,7 +9,7 @@ it('returns an object for persisting the function', () => {
 
   expect(callback.disposed).toBe(false);
 
-  callback.apply(42);
+  callback.apply(null, [42]);
 
   expect(func).toHaveBeenCalledWith(42);
 });

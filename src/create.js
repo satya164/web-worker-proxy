@@ -142,12 +142,10 @@ export default function create(worker: Worker): any {
               const callback = callbacks.get(ref);
 
               if (callback) {
-                if (callback.type === TYPE_PERSISTED_FUNCTION) {
-                  callback.apply(...args);
-                } else {
-                  callback(...args);
+                callback.apply(null, args);
 
-                  // Remove the callback
+                if (callback.type !== TYPE_PERSISTED_FUNCTION) {
+                  // Remove the callback if it's not persisted
                   callbacks.delete(ref);
                 }
               } else {
