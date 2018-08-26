@@ -14,6 +14,16 @@ export default function intercept(
   let promise;
 
   return new Proxy(o, {
+    construct(target, args) {
+      const previous = actions.slice(0, actions.length - 1);
+      const last = actions[actions.length - 1];
+
+      // It's an object construction
+      return callback([
+        ...previous,
+        { type: 'construct', key: last.key, args },
+      ]);
+    },
     get(target, key) {
       // Here we intercept both function calls and property access
       // If the key was `then`, we create a `thenable` so that the result can be awaited
@@ -34,14 +44,8 @@ export default function intercept(
       }
 
       function func(...args) {
-        /* $FlowFixMe */
-        if (new.target) {
-          // It's an object construction
-          return callback([...actions, { type: 'construct', key, args }]);
-        } else {
-          // It's a function call
-          return callback([...actions, { type: 'apply', key, args }]);
-        }
+        // It's a function call
+        return callback([...actions, { type: 'apply', key, args }]);
       }
 
       return intercept(callback, func, [...actions, { type: 'get', key }]);
