@@ -2,6 +2,7 @@
 
 import intercept from './intercept';
 import uid from './uid';
+import { serialize, deserialize } from './transfer';
 import {
   ACTION_OPERATION,
   ACTION_DISPOSE,
@@ -30,11 +31,11 @@ export default function create(worker: Worker): any {
       // Store a variable to indicate whether the task has been fulfilled
       let fulfilled = false;
 
-      // If we have a function call, map callbacks in the function call to refs
       if (type === ACTION_OPERATION) {
         const last = data[data.length - 1];
 
         if (last.type === 'apply') {
+          // If we have a function call, map callbacks in the function call to refs
           /* $FlowFixMe */
           last.args = last.args.map(arg => {
             // If the argument is a callback function, we create a ref and store the function
@@ -51,11 +52,7 @@ export default function create(worker: Worker): any {
 
             // Persisted functions are like normal functions, but can be called multiple times
             // We clean it up only when the user disposes it
-            if (
-              typeof arg === 'object' &&
-              arg != null &&
-              arg.type === TYPE_PERSISTED_FUNCTION
-            ) {
+            if (arg != null && arg.type === TYPE_PERSISTED_FUNCTION) {
               const ref = uid();
               callbacks.set(ref, arg);
 
@@ -79,8 +76,10 @@ export default function create(worker: Worker): any {
               };
             }
 
-            return arg;
+            return serialize(arg);
           });
+        } else if (last.type === 'set') {
+          last.value = serialize(last.value);
         }
       }
 
@@ -90,7 +89,7 @@ export default function create(worker: Worker): any {
           case RESULT_SUCCESS:
             if (e.data.id === id) {
               // If the success result was for current action, resolve the promise
-              resolve(e.data.result);
+              resolve(deserialize(e.data.result));
 
               fulfilled = true;
 
@@ -101,32 +100,7 @@ export default function create(worker: Worker): any {
 
           case RESULT_ERROR:
             if (e.data.id === id) {
-              // Try to get the global object
-              const g =
-                // DOM environment in browsers
-                typeof window !== 'undefined'
-                  ? window
-                  : // Web worker environment
-                    typeof self !== 'undefined'
-                    ? self
-                    : //Node environment
-                      typeof global !== 'undefined'
-                      ? // eslint-disable-next-line no-undef
-                        global
-                      : null;
-
-              const { name, message, stack } = e.data.error;
-
-              // If the error was for current action, reject the promise
-              // Try to preserve the error constructor, e.g. TypeError
-              const ErrorConstructor = g && g[name] ? g[name] : Error;
-
-              const error = new ErrorConstructor(message);
-
-              // Preserve the error stack
-              error.stack = stack;
-
-              reject(error);
+              reject(deserialize(e.data.error));
 
               fulfilled = true;
 
@@ -142,7 +116,7 @@ export default function create(worker: Worker): any {
               const callback = callbacks.get(ref);
 
               if (callback) {
-                callback.apply(null, args);
+                callback.apply(null, args.map(deserialize));
 
                 if (callback.type !== TYPE_PERSISTED_FUNCTION) {
                   // Remove the callback if it's not persisted

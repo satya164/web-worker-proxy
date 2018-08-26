@@ -14,8 +14,16 @@ const worker = create(
 
         show: { name: 'Star Wars', genre: 'SciFi' },
 
+        whoa: new Error('Wait what?'),
+
         methods: {
-          add: (a, b) => a + b,
+          add: (a, b) => {
+            if (typeof a === 'number' && typeof b === 'number') {
+              return a + b;
+            }
+
+            return new TypeError('Both arguments should be numbers');
+          },
 
           timeout: (duration, error) =>
             new Promise((resolve, reject) =>
@@ -28,11 +36,26 @@ const worker = create(
               )
             ),
 
-          error() {
+          throw() {
             throw new TypeError('This is not right');
           },
 
+          error(error, promise) {
+            if (error instanceof Error) {
+              if (promise) {
+                return Promise.resolve(error);
+              }
+
+              return error;
+            }
+          },
+
           callback(cb, count = 1) {
+            if (typeof count !== 'number') {
+              cb(new TypeError('Count must be a number'));
+              return;
+            }
+
             for (let i = 0; i < count; i++) {
               cb({ foo: 'bar', index: i });
             }
@@ -45,11 +68,12 @@ const worker = create(
 );
 
 it('accesses serializable properties', async () => {
-  expect.assertions(3);
+  expect.assertions(4);
 
   expect(await worker.name).toBe('John Doe');
   expect(await worker.fruits).toEqual(['orange', 'banana']);
   expect(await worker.show).toEqual({ name: 'Star Wars', genre: 'SciFi' });
+  expect(await worker.whoa).toEqual(new Error('Wait what?'));
 });
 
 it('accesses nested properties', async () => {
@@ -60,9 +84,12 @@ it('accesses nested properties', async () => {
 });
 
 it('gets result from synchronous function', async () => {
-  expect.assertions(1);
+  expect.assertions(2);
 
   expect(await worker.methods.add(3, 7)).toBe(10);
+  expect(await worker.methods.add()).toEqual(
+    new TypeError('Both arguments should be numbers')
+  );
 });
 
 it('gets result from async function', async () => {
@@ -81,14 +108,25 @@ it('catches thrown errors', async () => {
   expect.assertions(1);
 
   try {
-    await worker.methods.error();
+    await worker.methods.throw();
   } catch (e) {
     expect(e).toEqual(new TypeError('This is not right'));
   }
 });
 
-it('sets values', async () => {
+it('passes error object to worker and receives error object', async () => {
   expect.assertions(2);
+
+  expect(await worker.methods.error(new TypeError('Something is up'))).toEqual(
+    new TypeError('Something is up')
+  );
+  expect(
+    await worker.methods.error(new TypeError('Something is up'), true)
+  ).toEqual(new TypeError('Something is up'));
+});
+
+it('sets values', async () => {
+  expect.assertions(3);
 
   expect(await worker.foo).toBe(undefined);
 
@@ -96,6 +134,10 @@ it('sets values', async () => {
   worker.foo.baz = 42;
 
   expect(await worker.foo.baz).toBe(42);
+
+  worker.foo.bax = new SyntaxError('Invalid functionz');
+
+  expect(await worker.foo.bax).toEqual(new SyntaxError('Invalid functionz'));
 });
 
 it('is able to await a promise multiple times', async () => {
@@ -106,7 +148,7 @@ it('is able to await a promise multiple times', async () => {
   expect(await name).toBe('John Doe');
   expect(await name).toBe('John Doe');
 
-  const error = worker.methods.error();
+  const error = worker.methods.throw();
 
   try {
     await error;
@@ -122,11 +164,15 @@ it('is able to await a promise multiple times', async () => {
 });
 
 it('executes simple callback', done => {
-  expect.assertions(1);
+  expect.assertions(2);
 
   worker.methods.callback(result => {
     expect(result).toEqual({ foo: 'bar', index: 0 });
-    done();
+
+    worker.methods.callback(result => {
+      expect(result).toEqual(new TypeError('Count must be a number'));
+      done();
+    }, '4');
   });
 });
 

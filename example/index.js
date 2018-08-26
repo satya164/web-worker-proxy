@@ -14,7 +14,7 @@ worker.show.genre.then(console.log);
 worker.add(3, 4).then(console.log);
 worker.timeout(100).then(console.log);
 
-worker.error().catch(console.log);
+worker.throw().catch(console.log);
 
 worker.works = true;
 /* $FlowFixMe */

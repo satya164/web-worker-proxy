@@ -14,7 +14,7 @@ proxy({
   timeout: duration =>
     new Promise(resolve => setTimeout(() => resolve('Hello there'), duration)),
 
-  error() {
+  throw() {
     throw new TypeError('This is not right');
   },
 

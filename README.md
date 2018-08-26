@@ -170,7 +170,7 @@ The following environments support these features natively: Google Chrome >= 49,
 ## Limitations
 
 - Since workers run in a separate thread, all operations are asynchronous, and will return thenables
-- The transferred data needs to be serializable, most browsers implement the [structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) for transferring data
+- The transferred data needs to be serializable (error objects are handled automatically), most browsers implement the [structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) for transferring data
 - The transferred data is always copied, which means the references will be different, and any mutations won't be visible
 
 ## How it works

@@ -9,6 +9,7 @@ import {
   TYPE_FUNCTION,
   MESSAGE_DISPOSED_ERROR,
 } from './constants';
+import { serialize, deserialize } from './transfer';
 import type { Worker } from './types';
 
 const proxies = new WeakMap();
@@ -25,14 +26,6 @@ export default function proxy(o: Object, target?: Worker = self) {
   }
 
   proxies.set(target, true);
-
-  // Create an error response
-  // Since we cannot send the error object, we send necessary info to recreate it
-  const error = e => ({
-    name: e.constructor.name,
-    message: e.message,
-    stack: e.stack,
-  });
 
   // List of persisted function refs
   const persisted = [];
@@ -53,7 +46,11 @@ export default function proxy(o: Object, target?: Worker = self) {
               } else if (action.type === 'set') {
                 // Reflect.set will return a boolean to indicate if setting the property was successful
                 // Setting the property might fail if the object is read only
-                result = Reflect.set(result, action.key, action.value);
+                result = Reflect.set(
+                  result,
+                  action.key,
+                  deserialize(action.value)
+                );
               } else if (action.type === 'apply') {
                 const prop = result[action.key];
 
@@ -63,11 +60,7 @@ export default function proxy(o: Object, target?: Worker = self) {
                   result = prop(
                     // Loop through the results to find if there are callback functions
                     ...action.args.map(arg => {
-                      if (
-                        typeof arg === 'object' &&
-                        arg != null &&
-                        arg.type === TYPE_FUNCTION
-                      ) {
+                      if (arg != null && arg.type === TYPE_FUNCTION) {
                         // If we find a ref for a function, replace it with a custom function
                         // This function can notify the parent when it receives arguments
                         return (() => {
@@ -89,7 +82,7 @@ export default function proxy(o: Object, target?: Worker = self) {
                               type: RESULT_CALLBACK,
                               id,
                               func: {
-                                args: params,
+                                args: params.map(serialize),
                                 ref: arg.ref,
                               },
                             });
@@ -97,7 +90,7 @@ export default function proxy(o: Object, target?: Worker = self) {
                         })();
                       }
 
-                      return arg;
+                      return deserialize(arg);
                     })
                   );
                 }
@@ -112,22 +105,30 @@ export default function proxy(o: Object, target?: Worker = self) {
             if (result && typeof result.then === 'function') {
               Promise.resolve(result).then(
                 r =>
-                  target.postMessage({ type: RESULT_SUCCESS, id, result: r }),
+                  target.postMessage({
+                    type: RESULT_SUCCESS,
+                    id,
+                    result: serialize(r),
+                  }),
                 e =>
                   target.postMessage({
                     type: RESULT_ERROR,
                     id,
-                    error: error(e),
+                    error: serialize(e),
                   })
               );
             } else {
-              target.postMessage({ type: RESULT_SUCCESS, id, result });
+              target.postMessage({
+                type: RESULT_SUCCESS,
+                id,
+                result: serialize(result),
+              });
             }
           } catch (e) {
             target.postMessage({
               type: RESULT_ERROR,
               id,
-              error: error(e),
+              error: serialize(e),
             });
           }
         }
