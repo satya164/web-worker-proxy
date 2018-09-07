@@ -6,7 +6,7 @@
 [![Version][version-badge]][package]
 [![Bundle size (minified + gzip)][bundle-size-badge]][bundle-size]
 
-A better way of working with web workers. Uses [JavaScript Proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to make communcation with web workers similar to interacting with normal objects.
+A better way of working with web workers. Uses [JavaScript Proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to make communication with web workers similar to interacting with normal objects.
 
 ## Why
 
