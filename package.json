@@ -24,13 +24,18 @@
     "prepare": "yarn build",
     "example": "parcel example/index.html",
     "test": "jest",
-    "precommit": "yarn lint && yarn flow && yarn test"
+    "precommit": "yarn lint && yarn flow && yarn test",
+    "release": "release-it"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-flow": "^6.23.0",
     "codecov": "^3.0.4",
+    "conventional-changelog-cli": "^2.0.5",
     "del-cli": "^1.1.0",
     "eslint": "^4.19.1",
     "eslint-config-satya164": "^1.0.2",
@@ -40,6 +45,7 @@
     "jest": "^23.5.0",
     "parcel": "^1.9.7",
     "prettier": "^1.13.5",
+    "release-it": "^7.6.1",
     "structured-clone": "^0.2.2"
   },
   "jest": {
