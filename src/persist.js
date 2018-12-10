@@ -23,7 +23,7 @@ export default function persist<T: *>(func: (...args: T) => mixed) {
       listeners.forEach(listener => listener());
       disposed = true;
     },
-    on(name: 'dispose', cb: Function) {
+    on(name: 'dispose', cb: () => mixed) {
       if (name === 'dispose') {
         listeners.push(cb);
       }

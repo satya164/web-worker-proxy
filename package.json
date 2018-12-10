@@ -6,9 +6,11 @@
     "web worker",
     "proxy"
   ],
+  "types": "index.d.ts",
   "main": "lib/index.js",
   "files": [
-    "lib/"
+    "lib/",
+    "index.d.ts"
   ],
   "license": "MIT",
   "repository": {
