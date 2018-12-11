@@ -3,7 +3,7 @@ declare module 'web-worker-proxy' {
 
   export function proxy(o: object, target?: Worker): { dispose(): void };
 
-  export function persist<T extends Function>(
+  export function persist<T extends (...args: any[]) => any>(
     fn: T
   ): {
     type: string;
