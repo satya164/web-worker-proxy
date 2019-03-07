@@ -10,7 +10,7 @@ import {
   MESSAGE_DISPOSED_ERROR,
 } from './constants';
 import { serialize, deserialize } from './transfer';
-import type { Worker } from './types';
+import type { Target } from './types';
 
 const proxies = new WeakMap();
 
@@ -18,7 +18,7 @@ const proxies = new WeakMap();
  * Proxies an object inside an worker.
  * This should be called inside an worker.
  */
-export default function proxy(o: Object, target?: Worker = self) {
+export default function proxy(o: Object, target?: Target = self) {
   if (proxies.has(target)) {
     throw new Error(
       'The specified target already has a proxy. To create a new proxy, call `dispose` first to dispose the previous proxy.'
@@ -149,13 +149,21 @@ export default function proxy(o: Object, target?: Worker = self) {
     }
   };
 
-  target.addEventListener('message', listener);
+  if (target.onMessage) {
+    target.onMessage.addListener('message', listener);
+  } else {
+    target.addEventListener('message', listener);
+  }
 
   return {
     // Return a method to dispose the proxy
     // Disposing will remove the listeners and the proxy will stop working
     dispose: () => {
-      target.removeEventListener('message', listener);
+      if (target.onMessage) {
+        target.onMessage.removeListener('message', listener);
+      } else {
+        target.removeEventListener('message', listener);
+      }
       proxies.delete(target);
     },
   };
