@@ -3,7 +3,7 @@
   "changelogCommand": "conventional-changelog -p angular | tail -n +3",
   "safeBump": false,
   "src": {
-    "commitMessage": "chore: release %s",
+    "commit": false,
     "tagName": "v%s"
   },
   "npm": {
