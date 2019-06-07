@@ -1,5 +1,10 @@
 {
-  extends: "satya164",
+  extends: 'satya164',
+  settings: {
+    react: {
+      version: '16'
+    }
+  },
   env: {
     browser: true
   }

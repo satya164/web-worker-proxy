@@ -24,13 +24,13 @@ export function deserialize(item: any) {
       typeof window !== 'undefined'
         ? window
         : // Web worker environment
-          typeof self !== 'undefined'
-          ? self
-          : //Node environment
-            typeof global !== 'undefined'
-            ? // eslint-disable-next-line no-undef
-              global
-            : null;
+        typeof self !== 'undefined'
+        ? self
+        : //Node environment
+        typeof global !== 'undefined'
+        ? // eslint-disable-next-line no-undef
+          global
+        : null;
 
     const { name, message, stack } = item;
 
