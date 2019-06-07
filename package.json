@@ -1,6 +1,6 @@
 {
   "name": "web-worker-proxy",
-  "version": "0.0.0",
+  "version": "0.5.5",
   "description": "A better way of working with web workers",
   "keywords": [
     "web worker",
@@ -33,11 +33,11 @@
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
+    "@release-it/conventional-changelog": "^1.1.0",
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-flow": "^6.23.0",
     "codecov": "^3.0.4",
-    "conventional-changelog-cli": "^2.0.5",
     "del-cli": "^1.1.0",
     "eslint": "^4.19.1",
     "eslint-config-satya164": "^1.0.2",
@@ -47,7 +47,7 @@
     "jest": "^23.5.0",
     "parcel": "^1.9.7",
     "prettier": "^1.13.5",
-    "release-it": "^7.6.1",
+    "release-it": "^12.3.0",
     "structured-clone": "^0.2.2"
   },
   "jest": {
