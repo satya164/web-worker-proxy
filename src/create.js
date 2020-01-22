@@ -12,13 +12,13 @@ import {
   TYPE_FUNCTION,
   TYPE_PERSISTED_FUNCTION,
 } from './constants';
-import type { Worker } from './types';
+import type { Target } from './types';
 
 /**
  * Creates a proxied web worker.
  * This should be called in the DOM context.
  */
-export default function create(worker: Worker): any {
+export default function create(worker: Target): any {
   // Send actions to the worker and wait for result
   const send = (type, data) =>
     new Promise((resolve, reject) => {
@@ -135,11 +135,19 @@ export default function create(worker: Worker): any {
       const removeListener = () => {
         if (callbacks.size === 0 && fulfilled) {
           // Remove the listener once there are no callbacks left and task is fulfilled
-          worker.removeEventListener('message', listener);
+          if (worker.onMessage) {
+            worker.onMessage.removeListener('message', listener);
+          } else {
+            worker.removeEventListener('message', listener);
+          }
         }
       };
 
-      worker.addEventListener('message', listener);
+      if (worker.onMessage) {
+        worker.onMessage.addListener('message', listener);
+      } else {
+        worker.addEventListener('message', listener);
+      }
       worker.postMessage({ type, id, data });
     });
 

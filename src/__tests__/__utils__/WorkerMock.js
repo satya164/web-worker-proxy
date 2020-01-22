@@ -3,14 +3,9 @@
 /* istanbul ignore file */
 
 import clone from 'structured-clone';
+import type { Target } from '../../types';
 
-type Worker = {
-  addEventListener: (name: 'message', cb: (e: any) => mixed) => mixed,
-  removeEventListener: (name: 'message', cb: (e: any) => mixed) => mixed,
-  postMessage: (data: mixed) => mixed,
-};
-
-type Callback = (self: Worker) => mixed;
+type Callback = (self: Target) => mixed;
 
 const createScope = onMessage => {
   const listeners = [];
@@ -37,7 +32,7 @@ const createScope = onMessage => {
   };
 };
 
-export default function WorkerMock(callback: Callback): Worker {
+export default function WorkerMock(callback: Callback): Target {
   const workerScope = createScope(data => clientScope.notify(data));
   const clientScope = createScope(data => workerScope.notify(data));
 
